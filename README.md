@@ -1,2 +1,2 @@
-# TestForAzure2
-Test connect to azure
+# AxurePixServer
+Server that will accept file uploads, and create PSD+PNG overlay images. 
