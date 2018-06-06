@@ -1,22 +1,61 @@
-var express = require('express');
-var router = express.Router();
+'use strict';
+
+
+var ccconvert = require('../public/javascripts/ccconvert.js'),
+    express = require('express'),
+    router = express.Router(),
+    fs = require('fs'),
+    util = require("util"),
+    path = require('path'),
+    exec = require("child_process").exec,
+    tmp = require("tmp");
+
+tmp.setGracefulCleanup();
+
+function readBatch(pid) {
+    // TODO: read the batch file
+    // ./test/data/ Shapes.psd Green pictooverlay.png
+    return ({
+        outputPath: process.argv[2] + 'output/',
+        inputPath: process.argv[2] + process.argv[3],
+        overlayLayerName: process.argv[4],
+        overlayPngPath: process.argv[2] + process.argv[5]
+    });
+}
 
 function batchImageProc(pid) {
-    // TODO: read the batch file
-    this.outputPath = '';//process.argv[2] + 'output/';
-    this.inputPath = '';//process.argv[2] + process.argv[3];
-    this.overlayLayerName = '';//process.argv[4];
-    this.overlayPngPath = '';//process.argv[2] + process.argv[5];
+    let args = readBatch(pid);
+
+    return(args);
 }
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
     var procid = req.query['id'];
     if(procid !== undefined) {
-        var proc = new batchImageProc(procid);
-        res.render('runconvert', { title: 'Convert Files - procid: ' + procid });
+        const proc = new batchImageProc(procid),
+            basename = path.basename(proc.inputPath, path.extname(proc.inputPath)),
+            basepng = path.join(proc.outputPath, basename + '.png'),
+            finalpng = path.join(proc.outputPath, basename + '-mrg.png');
+
+        console.log('BEGIN OVERLAY: ' + proc.inputPath + ' + ' + proc.overlayPngPath + ' ==> ' + finalpng + ' using layer: "' + proc.overlayLayerName + '"');
+        let ercode = ccconvert.ccexportfile(proc.inputPath, basepng, proc.overlayLayerName, proc.overlayPngPath, finalpng);
+        console.log('END OVERLAY: ' + proc.inputPath + ' + ' + proc.overlayPngPath + ' ==> ' + finalpng + ' using layer: "' + proc.overlayLayerName + '"');
+
+        res.render('runconvert', {
+            procid: procid,
+            inputPath: proc.inputPath,
+            overlayLayerName: proc.overlayLayerName,
+            overlayPngPath: proc.overlayPngPath,
+            outputPath: proc.outputPath,
+            basename: basename,
+            basepng: basepng,
+            finalpng: finalpng,
+            errorcode: ercode
+        });
         return;
     }
+    console.log(' please supply all params e.g.: ./path/to/data input.psd LayerName mergedoutput.png');
     res.render('paramerror', { message: 'Incorrect parameters' });
 });
 
