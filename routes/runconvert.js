@@ -17,17 +17,17 @@ function readBatch(pid) {
     // ./data/ Shapes.psd Green pictooverlay.png
     const process = { argv: ['',
         '',
-        './data/',
+        path.join('.', 'data'),
         'Shapes.psd',
         'Green',
         'pictooverlay.png']};
 
     return ({
 
-        outputPath: process.argv[2] + 'output/',
-        inputPath: process.argv[2] + process.argv[3],
+        outputPath: path.join(process.argv[2], 'output'),
+        inputPath: path.join(process.argv[2], process.argv[3]),
         overlayLayerName: process.argv[4],
-        overlayPngPath: process.argv[2] + process.argv[5]
+        overlayPngPath: path.join(process.argv[2], process.argv[5])
     });
 }
 

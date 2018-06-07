@@ -57,7 +57,7 @@ function ccexportlayers(inppsd, inppng, layrname, ovrp, outp) {
 function ccmerge(inp, ovrp, outp, mt, ml, mw, mh) {
     var start = new Date();
 
-    console.log('--> ' + start + ' ccmerge inp: ' + inp + ' ovrp: ' + ovrp + ' outp' + outp + '  geom t r w h ' + mt + ' ' + ml + ' ' + mw + ' ' + mh);
+    console.log('--> ' + start + ' ccmerge inp: ' + inp + ' ovrp: ' + ovrp + ' outp: ' + outp + '  geom t r w h ' + mt + ' ' + ml + ' ' + mw + ' ' + mh);
 
     try {
         // imageOverlay.overlayImage(srcImgPath, ovrImgPath, outImgPath);   // no resize
@@ -85,8 +85,6 @@ function ccexportfile(inp, outp, layrname, ovrp, mergedp) {
         console.log('--> ' + endd + " ccexportfile Finished in " + ((endd) - start) + "ms");
         return ercode;
     });
-    console.error('--> ' + new Date() + " ccexportfile Could not find input PSD (" + inp + ")");
-    return 100;
 }
 
 module.exports.ccexportlayers = ccexportlayers;

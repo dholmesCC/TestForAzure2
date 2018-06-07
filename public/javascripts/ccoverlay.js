@@ -1,11 +1,12 @@
 'use strict';
 
 
-var fs = require("fs"),
+var cp = require("cp"),
+    fs = require("fs"),
     exec = require("child_process").execSync,
-    util = require("util"),
+    path = require('path'),
     tmp = require("tmp"),
-    cp = require("cp");
+    util = require("util");
 
 tmp.setGracefulCleanup();
 
@@ -51,6 +52,8 @@ function _doResize(src, dest, ow, oh) {
 function overlayImage(origImagePath, imageToOverlayPath, newImagePath,
                       overlayX, overlayY, overlayW, overlayH) {
 
+    console.log('path is: ' + exec('pwd'));
+
     if (!checkFileExists(origImagePath)) {
         console.error('----> overlayImage: no origImagePath at: ' + origImagePath);
         throw 100;
@@ -68,10 +71,9 @@ function overlayImage(origImagePath, imageToOverlayPath, newImagePath,
         overlayX = 0;
         overlayY = 0;
     }
-    var script = '';
-    var tmpFile = tmp.fileSync({ template: './tmp/tmp-XXXXXX.png' });
-
-    console.log('path is: ' + exec('pwd'));
+    var script = '',
+        tmpdir = path.join('.', 'tmp'),
+        tmpFile = tmp.fileSync({ template: path.join(tmpdir, 'tmp-XXXXXX.png') });
 
     if (overlayW != 0 || overlayH != 0) {
         if(_doResize(imageToOverlayPath, tmpFile.name, overlayW, overlayH)) {
