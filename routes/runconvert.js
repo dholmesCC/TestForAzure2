@@ -15,7 +15,15 @@ tmp.setGracefulCleanup();
 function readBatch(pid) {
     // TODO: read the batch file
     // ./data/ Shapes.psd Green pictooverlay.png
+    const process = { argv: ['',
+        '',
+        './data/',
+        'Shapes.psd',
+        'Green',
+        'pictooverlay.png']};
+
     return ({
+
         outputPath: process.argv[2] + 'output/',
         inputPath: process.argv[2] + process.argv[3],
         overlayLayerName: process.argv[4],
@@ -38,6 +46,9 @@ router.get('/', function(req, res, next) {
             basepng = path.join(proc.outputPath, basename + '.png'),
             finalpng = path.join(proc.outputPath, basename + '-mrg.png');
 
+        if(process.argv[2] === 'DEVMODE'){
+            console.warn('***DEVMODE***');
+        }
         console.log('BEGIN OVERLAY: ' + proc.inputPath + ' + ' + proc.overlayPngPath + ' ==> ' + finalpng + ' using layer: "' + proc.overlayLayerName + '"');
         let ercode = ccconvert.ccexportfile(proc.inputPath, basepng, proc.overlayLayerName, proc.overlayPngPath, finalpng);
         console.log('END OVERLAY: ' + proc.inputPath + ' + ' + proc.overlayPngPath + ' ==> ' + finalpng + ' using layer: "' + proc.overlayLayerName + '"');
