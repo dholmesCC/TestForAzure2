@@ -14,7 +14,7 @@ tmp.setGracefulCleanup();
 
 function readBatch(pid) {
     // TODO: read the batch file
-    // ./test/data/ Shapes.psd Green pictooverlay.png
+    // ./data/ Shapes.psd Green pictooverlay.png
     return ({
         outputPath: process.argv[2] + 'output/',
         inputPath: process.argv[2] + process.argv[3],
