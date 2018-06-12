@@ -1,7 +1,7 @@
 'use strict';
 
 
-var cp = require("cp"),
+const cp = require("cp"),
     fs = require("fs"),
     exec = require("child_process").execSync,
     path = require('path'),
@@ -9,6 +9,10 @@ var cp = require("cp"),
     util = require("util");
 
 tmp.setGracefulCleanup();
+
+function checkFileExists(filePath) {
+    return fs.existsSync(filePath);
+}
 
 /*
  * Overlay the image at imageToOverlayPath on the image at origImagePath at
@@ -22,83 +26,61 @@ tmp.setGracefulCleanup();
  * uses ImageMagick command line:
  * https://www.imagemagick.org/script/command-line-processing.php
  */
-function _doOverlay(src, osrc, dest, ox, oy) {
-    // const combineCmd = 'convert %s %s -geometry +%d+%d -composite %s\n';
-    // TODO: this will change if Windows/Azure??
-    const combineCmd = 'bash setmagick.sh %s %s -geometry +%d+%d -composite %s';
-    var cmd = util.format(combineCmd, src, osrc, ox, oy, dest);
-    console.log('----> running _doOverlay: ' + cmd + exec(cmd, function (error, stdout, stderr) {
+function _doOverlay(src, osrc, dest, ox, oy, magickbat) {
+    const combineCmd = magickbat + ' %s %s -geometry +%d+%d -composite %s',
+        cmd = util.format(combineCmd, src, osrc, ox, oy, dest);
+    console.log('----> running _doOverlay: ' + cmd + exec(cmd, function (error /*, stdout, stderr*/) {
         if (error) {
-            console.error('----> _doOverlay ERROR ' + error);
-            return 1;
+            throw('overlayImage: error combining image: error' + error);
         }
     }));
     return 0;
 }
 
-function _doResize(src, dest, ow, oh) {
-    // const imgResizeCmd = 'bash setmagick.sh -density 1200 -background none -resize x%d^ -gravity center -extent %dx%d %s %s\n';
-    const imgResizeCmd = 'bash setmagick.sh %s -resize %dx%d -gravity center %s\n';
-    var cmd = util.format(imgResizeCmd, src, ow, oh, dest);
-    console.log('----> _doResize: ' + cmd + exec(cmd, function (error, stdout, stderr) {
+function _doResize(src, dest, ow, oh, magickbat) {
+    const imgResizeCmd = magickbat + ' %s -resize %dx%d -gravity center %s\n',
+        cmd = util.format(imgResizeCmd, src, ow, oh, dest);
+    console.log('----> _doResize: ' + cmd + exec(cmd, function (error /*, stdout, stderr*/) {
         if (error) {
-            console.error('----> _doResize ERROR ' + error);
-            return 1;
+            throw('overlayImage: error resizing image: error' + error);
         }
     }));
-    return 0;
 }
 
 function overlayImage(origImagePath, imageToOverlayPath, newImagePath,
-                      overlayX, overlayY, overlayW, overlayH) {
+                      overlayX, overlayY, overlayW, overlayH, devmode) {
 
-    console.log('path is: ' + exec('pwd'));
+    const magickbat = devmode ? 'bash setmagick.sh' : '..\\setmagick.bat';
 
     if (!checkFileExists(origImagePath)) {
-        console.error('----> overlayImage: no origImagePath at: ' + origImagePath);
-        throw 100;
+        throw('overlayImage: no origImagePath at: ' + origImagePath);
     }
     if (!checkFileExists(imageToOverlayPath)) {
-        console.error('----> overlayImage: no imageToOverlayPath at: ' + imageToOverlayPath);
-        throw 200;
+        throw('overlayImage: no imageToOverlayPath at: ' + imageToOverlayPath);
     }
 
-    if (overlayW == undefined || overlayH == undefined) {
+    if (overlayW === undefined || overlayH === undefined) {
         overlayW = 0;
         overlayH = 0;
     }
-    if (overlayX == undefined || overlayY == undefined) {
+    if (overlayX === undefined || overlayY === undefined) {
         overlayX = 0;
         overlayY = 0;
     }
-    var script = '',
-        tmpdir = path.join('.', 'tmp'),
+    const tmpdir = path.join((devmode ? '.' : '..'), 'tmp'),
         tmpFile = tmp.fileSync({ template: path.join(tmpdir, 'tmp-XXXXXX.png') });
 
-    if (overlayW != 0 || overlayH != 0) {
-        if(_doResize(imageToOverlayPath, tmpFile.name, overlayW, overlayH)) {
-            return;
-        }
+    if (overlayW !== 0 || overlayH !== 0) {
+        _doResize(imageToOverlayPath, tmpFile.name, overlayW, overlayH, magickbat);
     } else {
         cp(imageToOverlayPath, tmpFile.name, function (err) {
             if (err !== undefined) {
-                console.error("copied with err " + err);
-                return;
+                throw('overlayImage: error copying image: ' + imageToOverlayPath);
             }
         });
     }
-    _doOverlay(origImagePath, tmpFile.name, newImagePath, overlayX, overlayY);
-}
-
-function validateLoad() {
-    console.log("Module loaded");
-    return true;
-}
-
-function checkFileExists(filePath) {
-    return fs.existsSync(filePath);
+    return _doOverlay(origImagePath, tmpFile.name, newImagePath, overlayX, overlayY, magickbat);
 }
 
 module.exports.overlayImage = overlayImage;
-module.exports.validateLoad = validateLoad;
 module.exports.checkFileExists = checkFileExists;

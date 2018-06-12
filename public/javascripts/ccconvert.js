@@ -1,22 +1,26 @@
 'use strict';
 
-var PSD = require('psd'),
-    // fs = require('fs'),
+const PSD = require('psd'),
+    fs = require('fs'),
     imageOverlay = require('./ccoverlay');
 
 /**
  * get the layer indicated by layrname and retrieve the geometry of that layer
  * this will be the layer to merge to
- * @param inp
+ *
+ * @param inppsd
+ * @param inppng
  * @param layrname
+ * @param ovrp
+ * @param outp
  * @returns {number}
  */
-function ccexportlayers(inppsd, inppng, layrname, ovrp, outp) {
-    var start = new Date(),
+function _ccexportlayers(inppsd, inppng, layrname, ovrp, outp, devmode) {
+    let start = new Date(),
         didmerge = false,
         mergelayr = {};
 
-    console.log('--> ' + start + ' ccexportlayers using inppsd: ' + inppsd + ' inppng: ' + inppng + ' layrname: ' + layrname);
+    console.log('--> ' + start + ' _ccexportlayers using inppsd: ' + inppsd + ' inppng: ' + inppng + ' layrname: ' + layrname);
 
     PSD.open(inppsd).then(function (psd) {
         psd.tree().descendants().forEach(function (node) {
@@ -27,66 +31,63 @@ function ccexportlayers(inppsd, inppng, layrname, ovrp, outp) {
             // }
             if(node.name.indexOf(layrname) > 0) {
                 mergelayr = node.export();
-                console.log('--> ccexportlayers: found layer named ' + layrname + ' geom t r w h ' + mergelayr.top + ' ' + mergelayr.right + ' ' +
+                console.log('--> _ccexportlayers: found layer named ' + layrname + ' geom t r w h ' + mergelayr.top + ' ' + mergelayr.right + ' ' +
                     mergelayr.width + ' ' + mergelayr.height);
                 didmerge = true;
             }
         });
     }).then(function () {
         if(!didmerge){
-            console.error('--> ccexportlayers: could not find layer named ' + layrname);
-            return 0;
+            throw('_ccexportlayers: could not find layer named ' + layrname);
         } else {
-            ccmerge(inppng, ovrp, outp, mergelayr.top, mergelayr.left, mergelayr.width, mergelayr.height);
+            _ccmerge(inppng, ovrp, outp, mergelayr.top, mergelayr.left, mergelayr.width, mergelayr.height, devmode);
         }
-        var endd = (new Date());
-        console.log('--> ' + endd + " ccexportlayers Finished in " + ((new Date()) - start) + "ms");
-    }).catch(function (err) {
-        var endd = (new Date());
-        console.error('--> ' + endd + " ccexportlayers ERROR " + err.stack);
-        return 0;
+        const endd = (new Date());
+        console.log('--> ' + endd + " _ccexportlayers Finished in " + ((new Date()) - start) + "ms");
     });
-    return 1;
 }
 
 /**
  * merge the overlay png over the base image
+ *
  * @param inp
+ * @param ovrp
  * @param outp
+ * @param mt
+ * @param ml
+ * @param mw
+ * @param mh
  */
-function ccmerge(inp, ovrp, outp, mt, ml, mw, mh) {
-    var start = new Date();
+function _ccmerge(inp, ovrp, outp, mt, ml, mw, mh, devmode) {
+    const start = new Date();
 
-    console.log('--> ' + start + ' ccmerge inp: ' + inp + ' ovrp: ' + ovrp + ' outp: ' + outp + '  geom t r w h ' + mt + ' ' + ml + ' ' + mw + ' ' + mh);
+    console.log('--> ' + start + ' _ccmerge inp: ' + inp + ' ovrp: ' + ovrp + ' outp: ' + outp + '  geom t r w h ' + mt + ' ' + ml + ' ' + mw + ' ' + mh);
 
-    try {
-        // imageOverlay.overlayImage(srcImgPath, ovrImgPath, outImgPath);   // no resize
-        imageOverlay.overlayImage(inp, ovrp, outp, ml, mt, mw, mh);      // resize
-    } catch(e) {
-        console.error("--> ccmerge:imageOverlay threw exception " + e);
-    }
-    var endd = (new Date());
-    console.log('--> ' + endd + " ccmerge Finished in " + ((endd) - start) + "ms");
+    // imageOverlay.overlayImage(srcImgPath, ovrImgPath, outImgPath);   // no resize
+    imageOverlay.overlayImage(inp, ovrp, outp, ml, mt, mw, mh, devmode);      // resize
+
+    const endd = (new Date());
+    console.log('--> ' + endd + " _ccmerge Finished in " + ((endd) - start) + "ms");
 }
 
-function ccexportfile(inp, outp, layrname, ovrp, mergedp) {
+function ccexportfile(inp, outp, layrname, ovrp, mergedp, devmode) {
     //var psd = PSD.fromFile(file.realpath);
-    let start = new Date(),
-    ercode;
+    let start = new Date();
 
     console.log('--> ' + start + ' ccexportfile using inp: ' + inp + ' outp: ' + outp);
 
+    if(!fs.existsSync(inp)) {
+        throw('ccexportfile: no PSD file at: ' + inp);
+    }
+
     PSD.open(inp).then(function (psd) {
         psd.image.saveAsPng(outp).then(function (){
-            ercode = ccexportlayers(inp, outp, layrname, ovrp, mergedp);
+            _ccexportlayers(inp, outp, layrname, ovrp, mergedp, devmode);
         });
     }).then(function () {
-        var endd = (new Date());
+        const endd = (new Date());
         console.log('--> ' + endd + " ccexportfile Finished in " + ((endd) - start) + "ms");
-        return ercode;
     });
 }
 
-module.exports.ccexportlayers = ccexportlayers;
-module.exports.ccmerge = ccmerge;
 module.exports.ccexportfile = ccexportfile;
