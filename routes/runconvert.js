@@ -67,12 +67,17 @@ router.get('/', function(req, res /*, next*/) {
             console.log('END OVERLAY: ' + procid);
         });
 
-        // now pipe some data into it
-        fs.createReadStream(csvfile).pipe(parser);
+        if(fs.existsSync(csvfile)) {
+            // now pipe some data into it
+            fs.createReadStream(csvfile).pipe(parser);
+        } else {
+            console.error('INVALID batch ID');
+            res.render('paramerror', { message: 'INVALID batch ID: ' + procid });
+        }
 
         return;
     }
-    console.log(' please supply all params e.g.: ./path/to/data input.psd LayerName mergedoutput.png');
+    console.error(' please supply all params e.g.: ./path/to/data input.psd LayerName mergedoutput.png');
     res.render('paramerror', { message: 'Incorrect parameters' });
 });
 
