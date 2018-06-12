@@ -13,6 +13,7 @@ const PSD = require('psd'),
  * @param layrname
  * @param ovrp
  * @param outp
+ * @param devmode
  * @returns {number}
  */
 function _ccexportlayers(inppsd, inppng, layrname, ovrp, outp, devmode) {
@@ -57,6 +58,7 @@ function _ccexportlayers(inppsd, inppng, layrname, ovrp, outp, devmode) {
  * @param ml
  * @param mw
  * @param mh
+ * @param devmode
  */
 function _ccmerge(inp, ovrp, outp, mt, ml, mw, mh, devmode) {
     const start = new Date();

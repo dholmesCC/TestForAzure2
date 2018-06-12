@@ -4,84 +4,72 @@
 const ccconvert = require('../public/javascripts/ccconvert.js'),
     express = require('express'),
     router = express.Router(),
-    // fs = require('fs'),
+    fs = require('fs'),
     // util = require("util"),
     path = require('path'),
     exec = require("child_process").exec,
+    csv = require('csv-streamify'),
     tmp = require("tmp");
 
 tmp.setGracefulCleanup();
 
-function readBatch(pid, theprocess) {
-    const devmode = theprocess.argv[2] === 'DEVMODE';
-
-    // TODO: read the batch file
-    // ./data/ Shapes.psd Green pictooverlay.png
-    const process = {
-        argv: ['',
-            '',
-            path.join((devmode ? '.' : '..'), 'data'),
-            'Shapes.psd',
-            'Green',
-            'pictooverlay.png']
-    };
-
-    return ({
-        devmode: devmode,
-        pid: pid,
-
-        outputPath: path.join(process.argv[2], 'output'),
-        inputPath: path.join(process.argv[2], process.argv[3]),
-        overlayLayerName: process.argv[4],
-        overlayPngPath: path.join(process.argv[2], process.argv[5])
-    });
-}
-
-function BatchImageProc(pid) {
-    let args = readBatch(pid, process);
-
-    return(args);
-}
-
 /* GET home page. */
 router.get('/', function(req, res /*, next*/) {
-    const procid = req.query['id'];
-    if(procid !== undefined) {
-        const proc = new BatchImageProc(procid),
-            basename = path.basename(proc.inputPath, path.extname(proc.inputPath)),
-            basepng = path.join(proc.outputPath, basename + '.png'),
-            finalpng = path.join(proc.outputPath, basename + '-mrg.png');
+    const procid = req.query['id'],
+        devmode = process.argv[2] === 'DEVMODE',
+        datadir = path.join((devmode ? '.' : '..'), 'data'),
+        parser = csv(),
+        csvfile = path.join(datadir, procid + '.csv');
 
-        if(proc.devmode){
+    if(procid !== undefined) {
+        if(devmode){
             console.warn('***DEVMODE***');
         }
-        console.log('BEGIN OVERLAY: ' + proc.inputPath + ' + ' + proc.overlayPngPath + ' ==> ' + finalpng + ' using layer: "' + proc.overlayLayerName + '"');
-        console.log('path is: ' + exec('pwd'));
 
-        let ermsg = 'starting...';
+        // emits each line as a buffer or as a string representing an array of fields
+        parser.on('data', function (line) {
+            // CSV file contains 1234, Shapes.psd Green pictooverlay.png
+            console.log(line);
 
-        try {
-            ccconvert.ccexportfile(proc.inputPath, basepng, proc.overlayLayerName, proc.overlayPngPath, finalpng, proc.devmode);
-            ermsg = 'success';
-            console.log(ermsg);
-        } catch(e) {
-            ermsg = e;
-            console.error(ermsg);
-        }
+            let outputPath = path.join(datadir, 'output'),
+                inputPath = path.join(datadir, line[1]),
+                overlayLayerName = line[2],
+                overlayPngPath = path.join(datadir, line[3]),
+                basename = path.basename(inputPath, path.extname(inputPath)),
+                basepng = path.join(outputPath, basename + '.png'),
+                finalpng = path.join(outputPath, basename + '-mrg.png'),
+                ermsg = 'starting...';
 
-        console.log('END OVERLAY: ' + proc.inputPath + ' + ' + proc.overlayPngPath + ' ==> ' + finalpng + ' using layer: "' + proc.overlayLayerName + '"');
+            console.log('BEGIN OVERLAY: ' + procid + ':' + inputPath + ' + ' + overlayPngPath + ' ==> ' + finalpng + ' using layer: "' + overlayLayerName + '"');
+            console.log('path is: ' + exec('pwd'));
 
-        res.render('runconvert', {
-            procid: procid,
-            inputPath: proc.inputPath,
-            overlayLayerName: proc.overlayLayerName,
-            overlayPngPath: proc.overlayPngPath,
-            outputPath: proc.outputPath,
-            basename: basename,
-            basepng: basepng,
-            finalpng: finalpng,
-            errorcode: ermsg
+            try {
+                ccconvert.ccexportfile(inputPath, basepng, overlayLayerName, overlayPngPath, finalpng, devmode);
+                ermsg = 'success';
+                console.log(ermsg);
+            } catch(e) {
+                ermsg = e;
+                console.error(ermsg);
+            }
+
+            res.render('runconvert', {
+                procid: procid,
+                inputPath: inputPath,
+                overlayLayerName: overlayLayerName,
+                overlayPngPath: overlayPngPath,
+                outputPath: outputPath,
+                basename: basename,
+                basepng: basepng,
+                finalpng: finalpng,
+                errorcode: ermsg
+            });
+
+            console.log('END OVERLAY: ' + procid);
         });
+
+        // now pipe some data into it
+        fs.createReadStream(csvfile).pipe(parser);
+
         return;
     }
     console.log(' please supply all params e.g.: ./path/to/data input.psd LayerName mergedoutput.png');
