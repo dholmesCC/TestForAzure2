@@ -53,9 +53,15 @@ router.get('/', function(req, res /*, next*/) {
                 }
 
                 /*
+                 * replace the input direcotyr
+                 */
+                mkdirp(inputdir, function () {
+                    console.log('Recreated input directory');
+                });
+
+                /*
                  * create output directory
                  */
-
                 mkdirp(outputPath, function (oerr) {
                     if (oerr) {
                         console.error('UNABLE TO create output directory: ' + oerr);
