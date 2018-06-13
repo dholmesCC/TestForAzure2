@@ -2,17 +2,13 @@
 
 
 const cp = require("cp"),
-    fs = require("fs"),
+    // fs = require("fs"),
     exec = require("child_process").execSync,
     path = require('path'),
     tmp = require("tmp"),
     util = require("util");
 
 tmp.setGracefulCleanup();
-
-function checkFileExists(filePath) {
-    return fs.existsSync(filePath);
-}
 
 /*
  * Overlay the image at imageToOverlayPath on the image at origImagePath at
@@ -52,13 +48,6 @@ function overlayImage(origImagePath, imageToOverlayPath, newImagePath,
 
     const magickbat = devmode ? 'bash setmagick.sh' : '..\\setmagick.bat';
 
-    if (!checkFileExists(origImagePath)) {
-        throw('overlayImage: no origImagePath at: ' + origImagePath);
-    }
-    if (!checkFileExists(imageToOverlayPath)) {
-        throw('overlayImage: no imageToOverlayPath at: ' + imageToOverlayPath);
-    }
-
     if (overlayW === undefined || overlayH === undefined) {
         overlayW = 0;
         overlayH = 0;
@@ -83,4 +72,3 @@ function overlayImage(origImagePath, imageToOverlayPath, newImagePath,
 }
 
 module.exports.overlayImage = overlayImage;
-module.exports.checkFileExists = checkFileExists;

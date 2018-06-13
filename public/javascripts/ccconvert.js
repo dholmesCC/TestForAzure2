@@ -82,6 +82,10 @@ function ccexportfile(inp, outp, layrname, ovrp, mergedp, devmode) {
         throw('ccexportfile: no PSD file at: ' + inp);
     }
 
+    if (!fs.existsSync(ovrp)) {
+        throw('ccexportfile: no overlay image at: ' + ovrp);
+    }
+
     PSD.open(inp).then(function (psd) {
         psd.image.saveAsPng(outp).then(function (){
             _ccexportlayers(inp, outp, layrname, ovrp, mergedp, devmode);

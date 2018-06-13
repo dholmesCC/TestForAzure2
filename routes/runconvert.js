@@ -32,6 +32,12 @@ router.get('/', function(req, res /*, next*/) {
             console.warn('***DEVMODE***');
         }
 
+        if (!fs.existsSync(csvfile)) {
+            console.error('INVALID batch ID');
+            res.render('paramerror', { message: 'INVALID batch ID: ' + procid });
+            return;
+        }
+
         /*
          * move files to work directories
          * mkdirp will create data/procid AND data/procid/output
@@ -91,7 +97,7 @@ router.get('/', function(req, res /*, next*/) {
                                 console.log(ermsg);
                             } catch(e) {
                                 ermsg = e;
-                                console.error(ermsg);
+                                console.error('CAUGHT error: ' + ermsg);
                             }
 
                             res.render('runconvert', {
@@ -109,13 +115,8 @@ router.get('/', function(req, res /*, next*/) {
                             console.log('END OVERLAY: ' + procid);
                         });
 
-                        if(fs.existsSync(csvfile)) {
-                            // now pipe some data into it
-                            fs.createReadStream(csvfile).pipe(parser);
-                        } else {
-                            console.error('INVALID batch ID');
-                            res.render('paramerror', { message: 'INVALID batch ID: ' + procid });
-                        }
+                        // now pipe some data into it
+                        fs.createReadStream(csvfile).pipe(parser);
                     }
                 });
             }
