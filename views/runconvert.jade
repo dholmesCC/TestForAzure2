@@ -1,14 +1,15 @@
 extends layout
 
 block content
-    h1 Convert Files Process Id: #{procid}
-    p inputPath: #{inputPath}
-    p overlayLayerName: #{overlayLayerName}
-    p outputPath: #{outputPath}
-    p basename: #{basename}
-    p Base PNG path: #{basepng}
-    p Overlay PNG path: #{overlayPngPath}
-    p Final PNG path: #{finalpng}
-    br
-    h4 Error Code: #{errorcode}
+    h1 Convert Files Batch ID: #{procid}
+    each parms in parmsarr
+        h4 job ID: #{parms.jobNum}
+        ul
+            li PSD file path: #{parms.psdFilePath}
+            li overlayLayerName: #{parms.overlayLayerName}
+            li overlayPngPath: #{parms.overlayPngPath}
+            li baseName: #{parms.baseName}
+            li basePng: #{parms.basePng}
+            li finalPng: #{parms.finalPng}
+            li error: #{parms.ermsg}
 
